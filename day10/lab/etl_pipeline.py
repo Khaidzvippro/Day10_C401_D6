@@ -148,7 +148,11 @@ def cmd_embed_internal(cleaned_csv: Path, *, run_id: str, log) -> bool:
         return True
 
     client = chromadb.PersistentClient(path=db_path)
-    emb = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=model_name)
+    if "text-embedding" in model_name:
+        from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+        emb = OpenAIEmbeddingFunction(model_name=model_name, api_key=os.environ.get("OPENAI_API_KEY", ""))
+    else:
+        emb = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=model_name)
     col = client.get_or_create_collection(name=collection_name, embedding_function=emb)
 
     ids = [r["chunk_id"] for r in rows]

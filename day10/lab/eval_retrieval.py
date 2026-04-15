@@ -55,7 +55,12 @@ def main() -> int:
     model_name = os.environ.get("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 
     client = chromadb.PersistentClient(path=db_path)
-    emb = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=model_name)
+    if "text-embedding" in model_name:
+        from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+
+        emb = OpenAIEmbeddingFunction(model_name=model_name, api_key=os.environ.get("OPENAI_API_KEY", ""))
+    else:
+        emb = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=model_name)
     try:
         col = client.get_collection(name=collection_name, embedding_function=emb)
     except Exception as e:

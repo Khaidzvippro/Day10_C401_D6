@@ -2,7 +2,6 @@
 *.swp
 *~
 
-# Grading questions — không public trước 17:00
-day08/lab/data/grading_questions.json
-day09/lab/data/grading_questions.json
-day10/lab/data/grading_questions.json
+# Ignore the .env file which may contain sensitive information
+.env
+.venv
