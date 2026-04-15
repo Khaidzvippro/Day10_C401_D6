@@ -26,25 +26,21 @@ ALLOWED_DOC_IDS = frozenset(
 
 _ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _DMY_SLASH = re.compile(r"^(\d{2})/(\d{2})/(\d{4})$")
-_ISO_DATETIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
-_HTML_TAGS = re.compile(r"<[^>]+>")
+_ISO_DATETIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})?")
 
 
-def _check_too_long(text: str, max_len: int = 8000) -> bool:
-    """Rule 11: Check chuỗi quá dài (vượt max token context của DB)."""
-    return len(text) > max_len
-
-
-def _remove_html_tags(text: str) -> str:
-    """Rule 12: Khử nhiễu thẻ HTML rác dính trong text."""
-    return _HTML_TAGS.sub("", text)
+def _check_too_long(text: str, max_chars: int = 8000, **kwargs: Any) -> bool:
+    """Rule 11: Check chuỗi quá dài (vượt số ký tự tối đa cho phép)."""
+    if "max_len" in kwargs:
+        max_chars = kwargs["max_len"]
+    return len(text) > max_chars
 
 
 def _check_invalid_exported_at(exported_at: str) -> bool:
     """Rule 7: Validate ISO-8601 format cho exported_at."""
     if not exported_at:
         return True
-    return not bool(_ISO_DATETIME.match(exported_at.strip()))
+    return not bool(_ISO_DATETIME.fullmatch(exported_at.strip()))
 
 
 def _check_short_or_trivial(text: str) -> bool:
@@ -170,9 +166,6 @@ def clean_rows(
                 fixed_text += " [cleaned: stale_refund_window]"
 
         # --- KHANH: RULE MỚI (SPRINT 1-2) ---
-        
-        # Rule 12: Khử nhiễu thẻ HTML rác dính trong text (Transformation)
-        fixed_text = _remove_html_tags(fixed_text)
         
         # Rule 11: Kiểm soát trần kích thước context - Không nhét chunk quá 8000 kí tự
         if _check_too_long(fixed_text):
