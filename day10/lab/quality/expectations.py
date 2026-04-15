@@ -2,6 +2,15 @@
 Expectation suite đơn giản (không bắt buộc Great Expectations).
 
 Sinh viên có thể thay bằng GE / pydantic / custom — miễn là có halt có kiểm soát.
+
+Baseline (E1–E6): do instructor cung cấp.
+Mở rộng (E7–E9): Nguyễn Tuấn Khải — Quality/Expectation Owner.
+  E7 (halt): exported_at phải đúng định dạng ISO-8601 datetime (double-check sau cleaning layer)
+             → phát hiện trường hợp cleaning bị bypass hoặc transform làm hỏng format
+  E8 (warn): tỷ lệ chunk_text ngắn (<20 ký tự) không vượt 10% — cảnh báo nếu cleaning
+             tạo ra quá nhiều chunk rác
+  E9 (halt): tất cả doc_id trong cleaned phải nằm trong ALLOWED_DOC_IDS đồng bộ với
+             cleaning_rules.py — phát hiện "rò rỉ" doc lạ vào vector store
 """
 
 from __future__ import annotations
@@ -9,6 +18,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple
+
+_ISO_DATETIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})?$")
 
 
 @dataclass
@@ -109,6 +120,70 @@ def run_expectations(cleaned_rows: List[Dict[str, Any]]) -> Tuple[List[Expectati
             ok6,
             "halt",
             f"violations={len(bad_hr_annual)}",
+        )
+    )
+
+    # --- Mở rộng: Nguyễn Tuấn Khải ---
+
+    # E7 (halt): exported_at phải đúng định dạng ISO-8601 datetime sau cleaning layer
+    # Tại sao halt: nếu format sai → freshness_check sẽ không parse được → WARN/FAIL sai
+    # Metric impact: cleaning Rule 7 (Khánh) quarantine row có exported_at sai/rỗng TRƯỚC khi
+    #   vào đây; E7 là lớp double-check — phát hiện nếu cleaning bị bypass (--skip-validate)
+    #   hoặc transform pipeline làm hỏng format sau khi clean.
+    # Test: chạy inject (--no-refund-fix --skip-validate) với row có exported_at="invalid"
+    #   → E7 FAIL (halt) xuất hiện trong log
+    bad_exported_fmt = [
+        r for r in cleaned_rows
+        if not _ISO_DATETIME.match((r.get("exported_at") or "").strip())
+    ]
+    ok7 = len(bad_exported_fmt) == 0
+    results.append(
+        ExpectationResult(
+            "exported_at_iso_format",
+            ok7,
+            "halt",
+            f"invalid_exported_at_count={len(bad_exported_fmt)}",
+        )
+    )
+
+    # E8 (warn): tỷ lệ chunk_text ngắn (<20 ký tự) không vượt 10% tổng cleaned
+    # Tại sao warn (không halt): một vài chunk tiêu đề ngắn có thể hợp lệ; chỉ cảnh báo
+    #   khi tỷ lệ cao → dấu hiệu cleaning rule sinh ra nhiều chunk rác
+    # Metric impact: cleaning Rule 8 (Khánh) đã quarantine chunk trivial/ngắn; E8 đo
+    #   xem có "lọt lưới" không. Nếu ratio >10% → cleaning chưa đủ mạnh.
+    # Test: inject nhiều chunk ngắn qua --skip-validate → E8 WARN với ratio > 10%
+    short_20 = [r for r in cleaned_rows if len((r.get("chunk_text") or "")) < 20]
+    ratio_short = len(short_20) / len(cleaned_rows) if cleaned_rows else 0.0
+    ok8 = ratio_short <= 0.10
+    results.append(
+        ExpectationResult(
+            "short_chunk_ratio_under_10pct",
+            ok8,
+            "warn",
+            f"short_chunks_lt20={len(short_20)} ratio={ratio_short:.2%} threshold=10%",
+        )
+    )
+
+    # E9 (halt): tất cả doc_id trong cleaned phải nằm trong ALLOWED_DOC_IDS
+    # Đồng bộ với cleaning_rules.py (Khánh đã thêm access_control_sop vào ALLOWED_DOC_IDS)
+    # Tại sao halt: doc lạ lọt vào vector store → agent trả lời dựa trên dữ liệu không kiểm soát
+    # Metric impact: phát hiện nếu cleaning bị bypass (--skip-validate) với doc_id="legacy_catalog_xyz_zzz"
+    # Test: inject row có doc_id="unknown_source" qua --skip-validate → E9 FAIL (halt)
+    ALLOWED_DOC_IDS = frozenset({
+        "policy_refund_v4",
+        "sla_p1_2026",
+        "it_helpdesk_faq",
+        "hr_leave_policy",
+        "access_control_sop",  # đồng bộ với cleaning_rules.py (Khánh thêm Rule 10)
+    })
+    illegal_doc = [r for r in cleaned_rows if r.get("doc_id", "") not in ALLOWED_DOC_IDS]
+    ok9 = len(illegal_doc) == 0
+    results.append(
+        ExpectationResult(
+            "doc_id_in_allowlist",
+            ok9,
+            "halt",
+            f"illegal_doc_id_count={len(illegal_doc)} examples={[r.get('doc_id') for r in illegal_doc[:3]]}",
         )
     )
 
