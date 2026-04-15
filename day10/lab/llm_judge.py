@@ -65,23 +65,36 @@ def _build_prompt(eval_row: Dict[str, str], qmeta: Dict[str, Any]) -> str:
     must_contain = qmeta.get("must_contain_any", []) or []
     must_not = qmeta.get("must_not_contain", []) or []
     return (
-        "Ban la evaluator nghiem ngat cho he retrieval noi bo.\n"
-        "Hay danh gia dua tren cau hoi, top1_preview, va keyword policy.\n\n"
-        f"question_id: {eval_row.get('question_id', '')}\n"
-        f"question: {eval_row.get('question', '')}\n"
-        f"top1_doc_id: {eval_row.get('top1_doc_id', '')}\n"
-        f"top1_preview: {eval_row.get('top1_preview', '')}\n"
-        f"must_contain_any: {json.dumps(must_contain, ensure_ascii=False)}\n"
-        f"must_not_contain: {json.dumps(must_not, ensure_ascii=False)}\n\n"
-        "Chi tra ve JSON hop le, KHONG them text ngoai JSON, theo schema:\n"
+        "# Role\n"
+        "Ban la evaluator nghiem ngat cho he retrieval noi bo.\n\n"
+        "# Task\n"
+        "Danh gia chat luong retrieval dua tren cau hoi, top1_preview, va keyword policy.\n\n"
+        "# Input\n"
+        f"- question_id: {eval_row.get('question_id', '')}\n"
+        f"- question: {eval_row.get('question', '')}\n"
+        f"- top1_doc_id: {eval_row.get('top1_doc_id', '')}\n"
+        f"- top1_preview: {eval_row.get('top1_preview', '')}\n"
+        f"- must_contain_any: {json.dumps(must_contain, ensure_ascii=False)}\n"
+        f"- must_not_contain: {json.dumps(must_not, ensure_ascii=False)}\n\n"
+        "# Evaluation rules\n"
+        "- factuality_pass: true neu thong tin top1_preview tra loi dung cau hoi.\n"
+        "- policy_safe: true neu top1_preview khong vi pham rang buoc policy.\n"
+        "- contains_expected: true neu co it nhat 1 keyword trong must_contain_any.\n"
+        "- hits_forbidden: true neu co bat ky keyword nao trong must_not_contain.\n"
+        "- score_0_to_5: diem tong hop 0-5 (5 la tot nhat).\n"
+        '- reason: 1-2 cau ngan, ro ly do danh gia.\n\n'
+        "# Output format (strict)\n"
+        "Chi tra ve 1 JSON object hop le, KHONG them text ngoai JSON, theo schema:\n"
+        "```json\n"
         "{\n"
-        '  "factuality_pass": true/false,\n'
-        '  "policy_safe": true/false,\n'
-        '  "contains_expected": true/false,\n'
-        '  "hits_forbidden": true/false,\n'
-        '  "score_0_to_5": 0..5,\n'
+        '  "factuality_pass": true,\n'
+        '  "policy_safe": true,\n'
+        '  "contains_expected": true,\n'
+        '  "hits_forbidden": false,\n'
+        '  "score_0_to_5": 5,\n'
         '  "reason": "1-2 cau ngan"\n'
         "}\n"
+        "```\n"
     )
 
 
