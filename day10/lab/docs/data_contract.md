@@ -1,6 +1,6 @@
 # Data contract — Lab Day 10
 
-> Bắt đầu từ `contracts/data_contract.yaml` — mở rộng và đồng bộ file này.
+> Bắt đầu từ `contracts/data_contract.yaml` — Đã đồng bộ 100% với phiên bản 1.0 của nhóm D401 - D6.
 
 ---
 
@@ -8,8 +8,9 @@
 
 | Nguồn | Phương thức ingest | Failure mode chính | Metric / alert |
 |-------|-------------------|-------------------|----------------|
-| `policy_export_dirty.csv` | Batch CSV | Stale dates, corrupted encoding | `quarantine_records` > 0 |
-| `data/docs/` | Local Files | Missing metadata, encoding | `raw_records` match count |
+| `policy_export_dirty.csv` | Batch CSV | Stale dates, Corrupted encoding | `quarantine_records` > 0 |
+| `data/docs/` | Local Files | Missing metadata, Version conflict | `effective_date` < cutoff |
+| `access_control_sop` | Local Files | Unknown doc_id (Rule 10) | `illegal_doc_id_count` > 0 |
 
 ---
 
@@ -27,13 +28,14 @@
 
 ## 3. Quy tắc quarantine vs drop
 
-- **Quarantine:** Bản ghi bị flag sẽ được đẩy vào `artifacts/quarantine/*.csv`.
-- **Review:** Tech Lead và Documentation Owner sẽ review định kỳ.
-- **Merge:** Sau khi sửa lỗi ở nguồn, dữ liệu sẽ được re-ingest.
+- **Quarantine:** Bản ghi bị flag (Rule 7-11) được đẩy vào `artifacts/quarantine/*.csv`.
+- **Halt (E7, E9):** Dừng pipeline nếu định dạng ngày tháng sai lệch nghiêm trọng hoặc doc_id lạ lọt lưới (phát hiện `access_control_sop` vi phạm).
+- **Review:** Tech Lead (Nhật) và Documentation Owner (Sơn) review định kỳ.
 
 ---
 
 ## 4. Phiên bản & canonical
 
-- **Source of Truth:** Chính sách `policy_refund_v4` là bản cập nhật nhất cho năm 2026.
-- **Canonical Path:** `/home/son/Day10_C401_D6/day10/lab/data/raw/`
+- **Source of Truth:** Chính sách `policy_refund_v4` và `access_control_sop`.
+- **Owner:** Nguyễn Quế Sơn (Documentation Owner - Team D401-D6)
+- **Alert:** Email / Slack khi Freshness > 24 giờ.

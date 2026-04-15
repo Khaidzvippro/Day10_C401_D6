@@ -28,12 +28,10 @@
 > Nguồn raw là gì (CSV mẫu / export thật)? Chuỗi lệnh chạy end-to-end? `run_id` lấy ở đâu trong log?
 
 **Tóm tắt luồng:**
-
-_________________
+Pipeline thực hiện chuỗi: Ingest CSV -> Clean (11 rule) -> Validate (9 expectations) -> Embed (ChromaDB) -> Freshness check. Hệ thống hỗ trợ so sánh giữa chế độ chuẩn (`khai-clean`) và chế độ kiểm thử (`inject-bad`).
 
 **Lệnh chạy một dòng (copy từ README thực tế của nhóm):**
-
-_________________
+`python etl_pipeline.py run --run-id khai-clean`
 
 ---
 
@@ -68,28 +66,21 @@ Sử dụng cờ `--skip-validate` trong kịch bản Sprint 3 để quan sát h
 > Bắt buộc: inject corruption (Sprint 3) — mô tả + dẫn `artifacts/eval/…` hoặc log.
 
 **Kịch bản inject:**
-
-_________________
+Chúng tôi sử dụng lệnh `python etl_pipeline.py run --run-id inject-bad --no-refund-fix --skip-validate` để cố ý giữ lại dữ liệu stale (14 ngày) và bỏ qua các bước kiểm tra chất lượng.
 
 **Kết quả định lượng (từ CSV / bảng):**
-
-_________________
-
----
-
-## 4. Freshness & monitoring (100–150 từ)
-
-> SLA bạn chọn, ý nghĩa PASS/WARN/FAIL trên manifest mẫu.
-
-_________________
+- **Inject:** `hits_forbidden=yes` cho câu hỏi hoàn tiền (kết quả retrieval chứa thông tin cũ 14 ngày).
+- **Clean:** `hits_forbidden=no`. Đặc biệt, chúng tôi triển khai **LLM-judge** (GPT-4o-mini) đạt điểm `llm_score=1` (Faithful) cho 100% các câu hỏi kiểm thử sau clean.
+- **Metric:** Pruning layer loại bỏ chính xác 1 vector cũ khi rerun bản sạch (`embed_prune_removed=1`).
 
 ---
 
-## 5. Liên hệ Day 09 (50–100 từ)
+**Freshness & Monitoring:**
+SLA được thiết lập là 24 giờ. Kết quả check trên mẫu dữ liệu ngày 10/04 là `FAIL` (trễ 119 giờ), chứng minh hệ thống cảnh báo hoạt động chính xác khi gặp dữ liệu cũ.
 
-> Dữ liệu sau embed có phục vụ lại multi-agent Day 09 không? Nếu có, mô tả tích hợp; nếu không, giải thích vì sao tách collection.
+---
 
-_________________
+Dữ liệu từ pipeline này phục vụ trực tiếp cho các Agent Day 09, giúp tránh lỗi trả lời sai về quy định hoàn tiền đã lỗi thời.
 
 ---
 

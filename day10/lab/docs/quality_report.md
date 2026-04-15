@@ -1,6 +1,6 @@
 # Quality report — Lab Day 10 (nhóm D401 - D6)
 
-**run_id:** `[PLACEHOLDER]` (Lấy từ Tech Lead sau khi chạy pipeline)
+**run_id:** `khai-clean`  
 **Ngày:** 15/04/2026
 
 ---
@@ -10,9 +10,9 @@
 | Chỉ số | Trước (Inject) | Sau (Clean) | Ghi chú |
 |--------|-------|-----|---------|
 | raw_records | 10 | 10 | Dữ liệu mẫu ban đầu |
-| cleaned_records | `[TBD]` | `[TBD]` | Sau khi qua bộ lọc cleaning_rules.py |
-| quarantine_records | `[TBD]` | `[TBD]` | Bản ghi bị loại bỏ do lỗi |
-| Expectation halt? | FAIL | PASS | Kiểm tra Quality Gate |
+| cleaned_records | 6 | 6 | Số lượng chunk hợp lệ sau lọc |
+| quarantine_records | 4 | 4 | 4 bản ghi bị loại bỏ do lỗi |
+| Expectation halt? | FAIL (skip) | PASS | Kiểm tra Quality Gate |
 
 ---
 
@@ -21,8 +21,8 @@
 > Bằng chứng thực nghiệm so sánh hiệu quả của việc xử lý dữ liệu.
 
 **Câu hỏi then chốt:** refund window (`q_refund_window`)  
-**Trước (Inject):** Hệ thống trả về thông tin "14 ngày làm việc" (do dùng dữ liệu cũ chưa fix).
-**Sau (Clean):** Hệ thống trả về thông tin "7 ngày làm việc" và có tag `[cleaned: stale_refund_window]`.
+**Trước (Inject):** `hits_forbidden=yes` (Context chứa thông tin 14 ngày sai lệch).
+**Sau (Clean):** `hits_forbidden=no` (Thông tin được fix thành 7 ngày, LLM-judge score=1).
 
 **Merit (khuyến nghị):** versioning HR — `q_leave_version`
 **Trước:** Chứa các chính sách năm 2025 (10 ngày phép).
@@ -33,7 +33,8 @@
 ## 3. Freshness & monitor
 
 - **SLA:** 24 giờ.
-- **Kết quả:** `[TBD]` (Cần chạy `freshness_check.py` trên manifest thật).
+- **Kết quả:** `FAIL` (Dữ liệu mẫu từ ngày 10/04, trễ 119 giờ).
+- **Giải thích:** Đây là hành vi mong muốn để mô phỏng tình trạng data stale.
 
 ---
 

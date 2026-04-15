@@ -1,7 +1,7 @@
 # Kiến trúc pipeline — Lab Day 10
 
-**Nhóm:** C401 - D6  
-**Cập nhật:** 2026-04-15
+**Nhóm:** D401 - D6  
+**Cập nhật:** 15/04/2026
 
 ---
 
@@ -48,9 +48,9 @@ flowchart LR
 |------------|-------|--------|------------|
 | Ingest | `data/raw/policy_export_dirty.csv`, cấu hình `.env`, `run_id` | raw rows trong bộ nhớ, log `run_id`, `raw_records` | Lê Huy Hồng Nhật |
 | Transform | raw rows từ ingest, allowlist `doc_id`, rule clean trong `transform/cleaning_rules.py` | cleaned rows, `artifacts/cleaned/cleaned_<run_id>.csv`, `artifacts/quarantine/quarantine_<run_id>.csv` | Nguyễn Quốc Khánh |
-| Quality | cleaned rows từ transform, expectation suite trong `quality/expectations.py` | danh sách expectation pass/fail, tín hiệu `should_halt`, log expectation | Nguyễn Tuấn Khải |
-| Embed | cleaned CSV, `chunk_id`, Chroma config (`CHROMA_DB_PATH`, `CHROMA_COLLECTION`) | vector store Chroma đã upsert/prune, log `embed_upsert` và `embed_prune_removed` | Phan Văn Tấn |
-| Monitor | manifest JSON, `latest_exported_at`, SLA freshness | kết quả `PASS/WARN/FAIL`, chi tiết `age_hours`, giải thích vận hành trong runbook | Lê Công Thành |
+| Quality | cleaned rows từ transform, expectation suite trong `quality/expectations.py` | danh sách expectation pass/fail, tín hiệu `should_halt`, log expectation | Lê Nguyễn Quang Khải |
+| Embed | cleaned CSV, `chunk_id`, Chroma config (`CHROMA_DB_PATH`, `CHROMA_COLLECTION`) | vector store Chroma đã upsert/prune, log `embed_upsert` và `embed_prune_removed` | Võ Văn Tấn |
+| Monitor | manifest JSON, `latest_exported_at`, SLA freshness | kết quả `PASS/WARN/FAIL`, chi tiết `age_hours`, giải thích vận hành trong runbook | Đào Công Thành |
 
 **Ranh giới file chính:**
 
