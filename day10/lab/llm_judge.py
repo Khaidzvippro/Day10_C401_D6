@@ -164,6 +164,11 @@ def main() -> int:
         default=os.environ.get("LLM_JUDGE_MODEL", "gpt-4.1-mini"),
         help="Model dung de judge",
     )
+    p.add_argument(
+        "--for-grading",
+        action="store_true",
+        help="Xuat schema gan grading_run.jsonl de doi chieu (khong thay grading_run.py).",
+    )
     p.add_argument("--timeout", type=int, default=60, help="Timeout moi request (giay)")
     args = p.parse_args()
 
@@ -208,39 +213,92 @@ def main() -> int:
             except Exception as e:
                 judge = {"error": "request_failed", "detail": str(e)}
 
-            rec = {
-                "question_id": qid,
-                "question": row.get("question", ""),
-                "top1_doc_id": row.get("top1_doc_id", ""),
-                "top1_preview": row.get("top1_preview", ""),
-                "retrieval_contains_expected": row.get("contains_expected", ""),
-                "retrieval_hits_forbidden": row.get("hits_forbidden", ""),
-                "judge_factuality_pass": judge.get("factuality_pass"),
-                "judge_policy_safe": judge.get("policy_safe"),
-                "judge_contains_expected": judge.get("contains_expected"),
-                "judge_hits_forbidden": judge.get("hits_forbidden"),
-                "judge_score_0_to_5": judge.get("score_0_to_5"),
-                "judge_reason": judge.get("reason", ""),
-                "judge_raw": json.dumps(judge, ensure_ascii=False),
-                "model": args.model,
-            }
+            if args.for_grading:
+                # Che do doi chieu voi grading_run: uu tien ket qua LLM,
+                # fallback sang retrieval flags neu LLM tra ve thieu field.
+                retrieval_contains = str(row.get("contains_expected", "")).strip().lower() == "yes"
+                retrieval_forbidden = str(row.get("hits_forbidden", "")).strip().lower() == "yes"
+                contains_expected = judge.get("contains_expected")
+                hits_forbidden = judge.get("hits_forbidden")
+                if contains_expected is None:
+                    contains_expected = retrieval_contains
+                if hits_forbidden is None:
+                    hits_forbidden = retrieval_forbidden
+
+                top_doc = row.get("top1_doc_id", "")
+                expected_top1 = (qmeta.get("expect_top1_doc_id") or "").strip()
+                top1_matches = None
+                if expected_top1:
+                    top1_matches = top_doc == expected_top1
+
+                top_k = row.get("top_k_used", "")
+                try:
+                    top_k_used = int(top_k) if str(top_k).strip() else 0
+                except ValueError:
+                    top_k_used = 0
+
+                rec = {
+                    "id": qid,
+                    "question": row.get("question", ""),
+                    "top1_doc_id": top_doc,
+                    "contains_expected": bool(contains_expected),
+                    "hits_forbidden": bool(hits_forbidden),
+                    "top1_doc_matches": top1_matches,
+                    "top_k_used": top_k_used,
+                    "grading_criteria": qmeta.get("grading_criteria", []),
+                    "judge_score_0_to_5": judge.get("score_0_to_5"),
+                    "judge_reason": judge.get("reason", ""),
+                    "model": args.model,
+                }
+            else:
+                rec = {
+                    "question_id": qid,
+                    "question": row.get("question", ""),
+                    "top1_doc_id": row.get("top1_doc_id", ""),
+                    "top1_preview": row.get("top1_preview", ""),
+                    "retrieval_contains_expected": row.get("contains_expected", ""),
+                    "retrieval_hits_forbidden": row.get("hits_forbidden", ""),
+                    "judge_factuality_pass": judge.get("factuality_pass"),
+                    "judge_policy_safe": judge.get("policy_safe"),
+                    "judge_contains_expected": judge.get("contains_expected"),
+                    "judge_hits_forbidden": judge.get("hits_forbidden"),
+                    "judge_score_0_to_5": judge.get("score_0_to_5"),
+                    "judge_reason": judge.get("reason", ""),
+                    "judge_raw": json.dumps(judge, ensure_ascii=False),
+                    "model": args.model,
+                }
             merged_rows.append(rec)
             fj.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
-    fieldnames = [
-        "question_id",
-        "question",
-        "top1_doc_id",
-        "retrieval_contains_expected",
-        "retrieval_hits_forbidden",
-        "judge_factuality_pass",
-        "judge_policy_safe",
-        "judge_contains_expected",
-        "judge_hits_forbidden",
-        "judge_score_0_to_5",
-        "judge_reason",
-        "model",
-    ]
+    if args.for_grading:
+        fieldnames = [
+            "id",
+            "question",
+            "top1_doc_id",
+            "contains_expected",
+            "hits_forbidden",
+            "top1_doc_matches",
+            "top_k_used",
+            "grading_criteria",
+            "judge_score_0_to_5",
+            "judge_reason",
+            "model",
+        ]
+    else:
+        fieldnames = [
+            "question_id",
+            "question",
+            "top1_doc_id",
+            "retrieval_contains_expected",
+            "retrieval_hits_forbidden",
+            "judge_factuality_pass",
+            "judge_policy_safe",
+            "judge_contains_expected",
+            "judge_hits_forbidden",
+            "judge_score_0_to_5",
+            "judge_reason",
+            "model",
+        ]
     with out_csv.open("w", encoding="utf-8", newline="") as fc:
         w = csv.DictWriter(fc, fieldnames=fieldnames)
         w.writeheader()

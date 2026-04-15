@@ -32,6 +32,7 @@ def check_manifest_freshness(
     *,
     sla_hours: float = 24.0,
     now: datetime | None = None,
+    check_publish_boundary: bool = False,
 ) -> Tuple[str, Dict[str, Any]]:
     """
     Trả về ("PASS" | "WARN" | "FAIL", detail dict).
@@ -48,12 +49,32 @@ def check_manifest_freshness(
     if dt is None:
         return "WARN", {"reason": "no_timestamp_in_manifest", "manifest": data}
 
-    age_hours = (now - dt).total_seconds() / 3600.0
-    detail = {
+    source_age_hours = (now - dt).total_seconds() / 3600.0
+    detail: Dict[str, Any] = {
         "latest_exported_at": ts_raw,
-        "age_hours": round(age_hours, 3),
+        "age_hours": round(source_age_hours, 3),
         "sla_hours": sla_hours,
     }
-    if age_hours <= sla_hours:
-        return "PASS", detail
-    return "FAIL", {**detail, "reason": "freshness_sla_exceeded"}
+
+    status = "PASS" if source_age_hours <= sla_hours else "FAIL"
+    if status == "FAIL":
+        detail["reason"] = "freshness_sla_exceeded"
+
+    if check_publish_boundary:
+        publish_raw = data.get("publish_timestamp") or data.get("run_timestamp")
+        publish_dt = parse_iso(str(publish_raw)) if publish_raw else None
+        if publish_dt is None:
+            detail["publish_boundary"] = {"reason": "missing_publish_timestamp"}
+            return "WARN", detail
+
+        publish_age_hours = (now - publish_dt).total_seconds() / 3600.0
+        detail["publish_boundary"] = {
+            "publish_timestamp": publish_raw,
+            "publish_age_hours": round(publish_age_hours, 3),
+            "sla_hours": sla_hours,
+        }
+        if publish_age_hours > sla_hours:
+            detail["publish_boundary"]["reason"] = "publish_boundary_sla_exceeded"
+            status = "FAIL"
+
+    return status, detail
