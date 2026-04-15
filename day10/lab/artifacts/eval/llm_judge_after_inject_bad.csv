@@ -1,0 +1,5 @@
+question_id,question,top1_doc_id,retrieval_contains_expected,retrieval_hits_forbidden,judge_factuality_pass,judge_policy_safe,judge_contains_expected,judge_hits_forbidden,judge_score_0_to_5,judge_reason,model
+q_refund_window,Khách hàng có bao nhiêu ngày để yêu cầu hoàn tiền kể từ khi xác nhận đơn?,policy_refund_v4,yes,yes,True,True,True,False,5,"Nội dung trả lời đúng với chính sách, có chứa '7 ngày làm việc' và không vi phạm từ khóa bị cấm.",gpt-4.1-mini
+q_p1_sla,SLA phản hồi đầu tiên cho ticket P1 là bao lâu?,sla_p1_2026,yes,no,True,True,True,False,5,"Nội dung trả lời chính xác và đầy đủ về SLA phản hồi 15 phút, không vi phạm chính sách.",gpt-4.1-mini
+q_lockout,Bao nhiêu lần đăng nhập sai thì tài khoản bị khóa?,it_helpdesk_faq,yes,no,True,True,True,False,5,Top1 preview chính xác trả lời đúng số lần đăng nhập sai là 5 lần và không vi phạm chính sách.,gpt-4.1-mini
+q_leave_version,"Theo chính sách nghỉ phép hiện hành (2026), nhân viên dưới 3 năm kinh nghiệm được bao nhiêu ngày phép năm?",hr_leave_policy,yes,no,True,True,True,False,5,"Thông tin trong top1_preview chính xác, an toàn và chứa các từ khóa hợp lệ.",gpt-4.1-mini
