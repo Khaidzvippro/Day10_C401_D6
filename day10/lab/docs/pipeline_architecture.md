@@ -1,7 +1,7 @@
 # Kiến trúc pipeline — Lab Day 10
 
-**Nhóm:** D401 - D6  
-**Cập nhật:** 15/04/2026
+**Nhóm:** C401 - D6  
+**Cập nhật:** 2026-04-15
 
 ---
 
@@ -48,9 +48,9 @@ flowchart LR
 |------------|-------|--------|------------|
 | Ingest | `data/raw/policy_export_dirty.csv`, cấu hình `.env`, `run_id` | raw rows trong bộ nhớ, log `run_id`, `raw_records` | Lê Huy Hồng Nhật |
 | Transform | raw rows từ ingest, allowlist `doc_id`, rule clean trong `transform/cleaning_rules.py` | cleaned rows, `artifacts/cleaned/cleaned_<run_id>.csv`, `artifacts/quarantine/quarantine_<run_id>.csv` | Nguyễn Quốc Khánh |
-| Quality | cleaned rows từ transform, expectation suite trong `quality/expectations.py` | danh sách expectation pass/fail, tín hiệu `should_halt`, log expectation | Lê Nguyễn Quang Khải |
-| Embed | cleaned CSV, `chunk_id`, Chroma config (`CHROMA_DB_PATH`, `CHROMA_COLLECTION`) | vector store Chroma đã upsert/prune, log `embed_upsert` và `embed_prune_removed` | Võ Văn Tấn |
-| Monitor | manifest JSON, `latest_exported_at`, SLA freshness | kết quả `PASS/WARN/FAIL`, chi tiết `age_hours`, giải thích vận hành trong runbook | Đào Công Thành |
+| Quality | cleaned rows từ transform, expectation suite trong `quality/expectations.py` | danh sách expectation pass/fail, tín hiệu `should_halt`, log expectation | Nguyễn Tuấn Khải |
+| Embed | cleaned CSV, `chunk_id`, Chroma config (`CHROMA_DB_PATH`, `CHROMA_COLLECTION`) | vector store Chroma đã upsert/prune, log `embed_upsert` và `embed_prune_removed` | Phan Văn Tấn |
+| Monitor | manifest JSON, `latest_exported_at`, SLA freshness | kết quả `PASS/WARN/FAIL`, chi tiết `age_hours`, giải thích vận hành trong runbook | Lê Công Thành |
 
 **Ranh giới file chính:**
 
@@ -73,7 +73,7 @@ Pipeline này dùng chiến lược **snapshot publish** cho vector store, khôn
 Hệ quả vận hành:
 
 - Nếu chạy lại cùng một cleaned dataset, collection không bị phình vì cùng `chunk_id` sẽ được upsert đè thay vì sinh vector mới.
-- Nếu dữ liệu mới loại bỏ một chunk cũ, bước prune sẽ xóa vector stale để tránh top-k retrieval vẫn trả về ngữ cảnh lỗi thời.
+- If dữ liệu mới loại bỏ một chunk cũ, bước prune sẽ xóa vector stale để tránh top-k retrieval vẫn trả về ngữ cảnh lỗi thời.
 - Đây là lý do pipeline phù hợp với yêu cầu Day 10 về observability: retrieval đúng không chỉ nhờ top-1 đúng mà còn phải tránh `hits_forbidden` trong toàn bộ top-k.
 
 Điểm cần lưu ý là độ ổn định của `chunk_id` hiện phụ thuộc cả `seq`, nên nhóm cần rerun trên cùng cleaned dataset để xác nhận thực tế collection không tăng số lượng tài liệu sau lần chạy thứ hai.
