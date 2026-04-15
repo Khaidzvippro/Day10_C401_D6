@@ -145,16 +145,15 @@ def cmd_embed_internal(cleaned_csv: Path, *, run_id: str, log) -> bool:
     db_path = os.environ.get("CHROMA_DB_PATH", str(ROOT / "chroma_db"))
     collection_name = os.environ.get("CHROMA_COLLECTION", "day10_kb")
     model_name = os.environ.get("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
-
+    
     from transform.cleaning_rules import load_raw_csv as load_csv  # same loader
-
     rows = load_csv(cleaned_csv)
     if not rows:
         log("WARN: cleaned CSV rỗng — không embed.")
         return True
 
     client = chromadb.PersistentClient(path=db_path)
-    emb = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=model_name)
+    emb = embedding_functions.OpenAIEmbeddingFunction(api_key=os.environ.get("OPENAI_API_KEY"), model_name=model_name)
     col = client.get_or_create_collection(name=collection_name, embedding_function=emb)
 
     ids = [r["chunk_id"] for r in rows]
