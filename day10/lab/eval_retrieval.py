@@ -114,7 +114,7 @@ def main() -> int:
     model_name = os.environ.get("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 
     client = chromadb.PersistentClient(path=db_path)
-    emb = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=model_name)
+    emb = embedding_functions.OpenAIEmbeddingFunction(api_key=os.environ.get("OPENAI_API_KEY"), model_name=model_name)
     try:
         col = client.get_collection(name=collection_name, embedding_function=emb)
     except Exception as e:
