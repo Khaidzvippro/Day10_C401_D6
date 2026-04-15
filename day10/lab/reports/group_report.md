@@ -1,16 +1,18 @@
 # Báo Cáo Nhóm — Lab Day 10: Data Pipeline & Data Observability
 
-**Tên nhóm:** ___________  
+**Tên nhóm:** D401 - D6  
 **Thành viên:**
 | Tên | Vai trò (Day 10) | Email |
 |-----|------------------|-------|
-| ___ | Ingestion / Raw Owner | ___ |
-| ___ | Cleaning & Quality Owner | ___ |
-| ___ | Embed & Idempotency Owner | ___ |
-| ___ | Monitoring / Docs Owner | ___ |
+| Lê Huy Hồng Nhật | Tech Lead | nhat050403@gmail.com |
+| Nguyễn Quốc Khánh | Retrieval Owner | khanhnq352005@gmail.com |
+| Lê Nguyễn Quang Khải | Retrieval Owner | tuankhaidx2003@gmail.com |
+| Võ Văn Tấn | Eval Owner | tana2k53nvt@gmail.com |
+| Đào Công Thành | Eval Owner | lcthanh.htvn@gmail.com |
+| Nguyễn Quế Sơn | Documentation Owner | sonnguyenque5@gmail.com |
 
-**Ngày nộp:** ___________  
-**Repo:** ___________  
+**Ngày nộp:** 15/04/2026  
+**Repo:** Khaidzvippro/Day10_C401_D6  
 **Độ dài khuyến nghị:** 600–1000 từ
 
 ---
@@ -43,15 +45,21 @@ _________________
 
 | Rule / Expectation mới (tên ngắn) | Trước (số liệu) | Sau / khi inject (số liệu) | Chứng cứ (log / CSV / commit) |
 |-----------------------------------|------------------|-----------------------------|-------------------------------|
-| … | … | … | … |
+| Rule 7: Invalid exported_at | 0 quarantine | Tăng khi date sai format | `cleaning_rules.py` |
+| Rule 8: Short/Trivial context | 0 quarantine | Loại bỏ chunk rác/ngắn | `cleaning_rules.py` |
+| Rule 9: Corrupted encoding (BOM) | 0 quarantine | Loại bỏ ký tự lỗi | `cleaning_rules.py` |
+| Rule 11: Max chunk length | 0 quarantine | Cắt giảm context quá dài | `cleaning_rules.py` |
 
 **Rule chính (baseline + mở rộng):**
 
-- …
+- **Rule 7:** Kiểm soát ISO-8601 format cho `exported_at` để đảm bảo tính đồng nhất thời gian.
+- **Rule 8:** Lọc bỏ các chunk quá ngắn (< 20 ký tự) hoặc không chứa thông tin hữu ích (toàn số/ký hiệu).
+- **Rule 9:** Phát hiện và loại bỏ các ký tự lỗi encoding (BOM, NULL) gây sai lệch vector embedding.
+- **Rule 11:** Giới hạn độ dài tối đa của chunk (8000 ký tự) để tối ưu hóa context window cho LLM.
 
 **Ví dụ 1 lần expectation fail (nếu có) và cách xử lý:**
 
-_________________
+Sử dụng cờ `--skip-validate` trong kịch bản Sprint 3 để quan sát hệ thống vẫn cho phép nạp dữ liệu lỗi vào Vector DB, từ đó so sánh hiệu quả của Quality Gate.
 
 ---
 
