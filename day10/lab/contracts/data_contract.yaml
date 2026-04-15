@@ -1,9 +1,8 @@
 # Data contract — Lab Day 10 (tiếp nối artifact CS + IT Helpdesk)
 # Sinh viên bổ sung owner, SLA freshness, và nguồn canonical.
-
 version: "1.0"
 dataset: "kb_chunk_export"
-owner_team: "__TODO__"
+owner_team: "C401-D6 / Tech Lead + Ingestion Owner (Le Huy Hong Nhat)"
 
 schema_cleaned:
   chunk_id:
@@ -36,17 +35,24 @@ quality_rules:
 freshness:
   measured_at: "publish"  # ingest | cleaned | publish
   sla_hours: 24
-  alert_channel: "__TODO__"
+  alert_channel: "slack:#c401-d6-data-alert"
 
 canonical_sources:
   - path: "data/docs/policy_refund_v4.txt"
     doc_id: "policy_refund_v4"
+    description: "Refund policy v4, canonical window = 7 days"
   - path: "data/docs/sla_p1_2026.txt"
     doc_id: "sla_p1_2026"
+    description: "SLA P1 commitments for year 2026"
   - path: "data/docs/it_helpdesk_faq.txt"
     doc_id: "it_helpdesk_faq"
+    description: "IT helpdesk FAQ used by assistant retrieval"
   - path: "data/docs/hr_leave_policy.txt"
     doc_id: "hr_leave_policy"
+    description: "HR leave policy, effective-date governed"
+  - path: "data/docs/access_control_sop.txt"
+    doc_id: "access_control_sop"
+    description: "IT security SOP for access provisioning and escalation"
 
 # Baseline allowlist export — nhóm mở rộng doc mới phải đồng bộ cleaning_rules + contract.
 allowed_doc_ids:
@@ -54,6 +60,7 @@ allowed_doc_ids:
   - sla_p1_2026
   - it_helpdesk_faq
   - hr_leave_policy
+  - access_control_sop
 
 # Merit/Distinction: có thể đưa cutoff versioning vào env và tham chiếu ở đây (tránh hard-code trong code).
 policy_versioning:
