@@ -103,9 +103,11 @@ def cmd_run(args: argparse.Namespace) -> int:
     if cleaned:
         latest_exported = max((r.get("exported_at") or "" for r in cleaned), default="")
 
+    publish_ts = datetime.now(timezone.utc).isoformat()
     manifest = {
         "run_id": run_id,
-        "run_timestamp": datetime.now(timezone.utc).isoformat(),
+        "run_timestamp": publish_ts,
+        "publish_timestamp": publish_ts,
         "raw_path": str(raw_path.relative_to(ROOT)),
         "raw_records": raw_count,
         "cleaned_records": len(cleaned),
@@ -121,7 +123,11 @@ def cmd_run(args: argparse.Namespace) -> int:
     man_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     log(f"manifest_written={man_path.relative_to(ROOT)}")
 
-    status, fdetail = check_manifest_freshness(man_path, sla_hours=float(os.environ.get("FRESHNESS_SLA_HOURS", "24")))
+    status, fdetail = check_manifest_freshness(
+        man_path,
+        sla_hours=float(os.environ.get("FRESHNESS_SLA_HOURS", "24")),
+        check_publish_boundary=bool(args.check_publish_boundary),
+    )
     log(f"freshness_check={status} {json.dumps(fdetail, ensure_ascii=False)}")
 
     log("PIPELINE_OK")
@@ -183,7 +189,11 @@ def cmd_freshness(args: argparse.Namespace) -> int:
         print(f"manifest not found: {p}", file=sys.stderr)
         return 1
     sla = float(os.environ.get("FRESHNESS_SLA_HOURS", "24"))
-    status, detail = check_manifest_freshness(p, sla_hours=sla)
+    status, detail = check_manifest_freshness(
+        p,
+        sla_hours=sla,
+        check_publish_boundary=bool(args.check_publish_boundary),
+    )
     print(status, json.dumps(detail, ensure_ascii=False))
     return 0 if status != "FAIL" else 1
 
@@ -205,10 +215,20 @@ def main() -> int:
         action="store_true",
         help="Vẫn embed khi expectation halt (chỉ phục vụ demo có chủ đích).",
     )
+    p_run.add_argument(
+        "--check-publish-boundary",
+        action="store_true",
+        help="Bật kiểm tra freshness thêm mốc publish_timestamp (bonus boundary thứ 2).",
+    )
     p_run.set_defaults(func=cmd_run)
 
     p_fr = sub.add_parser("freshness", help="Đọc manifest và kiểm tra SLA freshness")
     p_fr.add_argument("--manifest", required=True)
+    p_fr.add_argument(
+        "--check-publish-boundary",
+        action="store_true",
+        help="Bật kiểm tra freshness thêm mốc publish_timestamp.",
+    )
     p_fr.set_defaults(func=cmd_freshness)
 
     args = parser.parse_args()
