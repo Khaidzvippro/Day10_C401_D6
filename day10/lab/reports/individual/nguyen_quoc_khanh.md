@@ -1,6 +1,6 @@
 # Báo Cáo Cá Nhân — Lab Day 10: Data Pipeline & Observability
 
-**Họ và tên:** Nguyễn Quốc Khánh
+**Họ và tên:** Nguyễn Quốc Khánh - 2A202600199
 **Vai trò:** Cleaning Owner (Sprint 1-2)
 **Ngày nộp:** 15/04/2026
 **Độ dài yêu cầu:** **400–650 từ**
@@ -12,7 +12,6 @@
 **File / module:**
 - `transform/cleaning_rules.py`: Tái cấu trúc pipeline clean data, thêm 4 rule mới (`_check_invalid_exported_at`, `_check_short_or_trivial`, `_check_corrupted_encoding` và `_check_too_long`). Bổ sung `access_control_sop` vào cấu hình `ALLOWED_DOC_IDS`.
 - `quality/expectations.py`: Cập nhật mã nguồn báo cáo lỗi cho các rule bị vi phạm.
-- `docs/quality_report.md`: Tổng hợp bảng thông số Group Report Sprint 3.
 
 **Kết nối với thành viên khác:**
 Tôi nhận file CSV Raw từ Ingestion Owner (Nhật), phân tích để bổ sung các filter bắt rác, sau đó trả output ra `artifacts/cleaned/` cho Tấn (Embed Owner) đẩy vào ChromaDB. Tôi cung cấp bảng `metric_impact` cho nhóm tổng hợp.
