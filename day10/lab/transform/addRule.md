@@ -6,7 +6,7 @@
 ---
 
 ## TỔNG QUAN
-Tôi đã phân tích file `data/raw/policy_export_dirty.csv` và kiến trúc Ingestion thực tế, qua đó bổ sung **6 Rule mới (gồm 3 rule theo yêu cầu Lab + 3 rule nâng cao)** tiếp nối sau 6 rule Baseline có sẵn. Dưới đây là chi tiết để team nắm thông tin:
+Tôi đã phân tích file `data/raw/policy_export_dirty.csv` và kiến trúc Ingestion thực tế, qua đó bổ sung **5 Rule mới (gồm 3 rule theo yêu cầu Lab + 2 rule nâng cao)** tiếp nối sau 6 rule Baseline có sẵn. Dưới đây là chi tiết để team nắm thông tin:
 
 ---
 
@@ -28,24 +28,19 @@ Tôi đã phân tích file `data/raw/policy_export_dirty.csv` và kiến trúc I
 - **Hành động:** Cách ly (Quarantine) với reason `corrupted_text_encoding`.
 
 ### 4. Rule 10 (Nâng cao): Khắc phục lỗi Mapping - Thêm `access_control_sop`
-- **Làm gì:** Bổ sung `"access_control_sop"` vào dict `ALLOWED_DOC_IDS`.
-- **Tại sao thêm (Why):** Trong folder `data/docs` thực tế có 5 file chính sách chuẩn (bao gồm file SOP Truy cập hệ thống này). Nhưng cấu hình code cũ chỉ cho phép 4 file. Việc mở rộng dict này đảm bảo các policy quan trọng không bị Drop oan uổng bởi Rule 1. Mọi người lưu ý để đồng bộ hợp đồng dữ liệu!
-- **Hành động:** Cập nhật biến tĩnh.
+- **Làm gì:** Bổ sung `"access_control_sop"` vào allowlist `ALLOWED_DOC_IDS` (kiểu `frozenset`).
+- **Tại sao thêm (Why):** Trong folder `data/docs` thực tế có 5 file chính sách chuẩn (bao gồm file SOP Truy cập hệ thống này). Nhưng cấu hình code cũ chỉ cho phép 4 file. Việc mở rộng allowlist này đảm bảo các policy quan trọng không bị Drop oan uổng bởi Rule 1. Mọi người lưu ý để đồng bộ hợp đồng dữ liệu!
+- **Hành động:** Cập nhật `frozenset` `ALLOWED_DOC_IDS` để bao gồm `access_control_sop`.
 
 ### 5. Rule 11 (Nâng cao): Chặn trần kích thước Token (Max Length Threshold)
 - **Làm gì:** Kiểm tra giới hạn số lượng ký tự tối đa của một chunk. Nếu chunk dính liền nhau dài hơn 8000 ký tự sẽ bị chặn.
 - **Tại sao thêm (Why):** Bảo vệ Server VectorDB và LLM. Một đoạn text siêu dài sẽ vượt quá "Context Window" của mô hình Embedding, gây ra lỗi Crash 500 nổ toàn bộ Pipeline khi nhúng.
 - **Hành động:** Cách ly (Quarantine) với reason `chunk_text_too_long`.
 
-### 6. Rule 12 (Nâng cao): Chuẩn hoá (Transform) - Gọt rửa thẻ HTML
-- **Làm gì:** Dùng RegEx (`<[^>]+>`) quét qua nội dung và xóa sạch mọi thẻ HTML/XML.
-- **Tại sao thêm (Why):** Các nguồn web parser thường để sót lại các tag như `<br>`, `<div>`. Rule này đứng ra "cạo sạch" rác hiển thị, giữ lại Text thuần túy thay vì vứt bỏ cả dòng data.
-- **Hành động:** Transform/Chuẩn hoá (Biến đổi `fixed_text` trở nên sạch sẽ hơn, không đưa vào Quarantine).
-
 ---
 
 ## 📌 HƯỚNG DẪN PHỐI HỢP CHO TEAM
 
 *   👉 **Gửi Khải (Quality Owner):** Khải có thể dựa vào các `reason` ở Rule 7, 8 hoặc 11 để viết code **Expectation**. (Ví dụ: Viết expectation bắt buộc `exported_at` không được Null).
-*   👉 **Gửi Sơn (Docs Owner):** Đem 6 rule này (ít nhất là Rule 7, 8, 9) vào mục **Metric Impact** trong `group_report.md` nhé (Anh Khánh sẽ đo đếm số lượng bản ghi bị loại để Sơn điền bảng). Đồng thời Sơn nhớ update `data_contract.md` bổ sung nguồn dữ liệu thứ 5 là `access_control_sop`.
+*   👉 **Gửi Sơn (Docs Owner):** Đem 5 rule này (ít nhất là Rule 7, 8, 9) vào mục **Metric Impact** trong `group_report.md` nhé (Anh Khánh sẽ đo đếm số lượng bản ghi bị loại để Sơn điền bảng). Đồng thời Sơn nhớ update `data_contract.md` bổ sung nguồn dữ liệu thứ 5 là `access_control_sop`.
 *   👉 **Gửi Nhật (Tech Lead):** Nhờ Nhật merge nhánh chứa file `cleaning_rules.py` mới này của Khánh và chạy thử Pipeline để chốt `run_id` nha!
